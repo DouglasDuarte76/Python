@@ -1,69 +1,59 @@
-pip install hypothesis
-_____________________________
-
-# calculadora.py
-def soma(a, b):
-    return a + b
-
-_____________________________
-
-# test_calculadora.py
-import unittest
-from calculadora import soma
-
-class TestCalculadora(unittest.TestCase):
-    def test_soma(self):
-        self.assertEqual(soma(2, 3), 5)
-        self.assertEqual(soma(10, -5), 5)
-
-if __name__ == "__main__":
-    unittest.main()
-
-_____________________________
-
-# test_hypothesis.py
-from hypothesis import given, strategies as st
-from calculadora import soma
-
-# Garante que soma(a, b) == soma(b, a) (propriedade comutativa)
-@given(st.integers(), st.integers())
-def test_soma_comutativa(a, b):
-    assert soma(a, b) == soma(b, a)
-
-# Garante que soma(a, 0) == a (propriedade do elemento neutro)
-@given(st.integers())
-def test_soma_elemento_neutro(a):
-    assert soma(a, 0) == a
-
-_____________________________
-
-pytest test_hypothesis.py
-
-_____________________________
-
-============================= test session starts ==============================
-hypothesis: tests=10000
-...
-========================= 2 passed in 0.12 seconds =============================
-
-_____________________________
-
-# calculadora.py (modificado)
-def divisao(a, b):
-    return a / b  # Pode falhar se b == 0
-
-_____________________________
-
-# test_hypothesis.py (modificado)
-@given(st.integers(), st.integers().filter(lambda x: x != 0))
-def test_divisao(a, b):
-    assert divisao(a, b) == a / b
-
-_____________________________
-
-pytest test_hypothesis.py
-
-_____________________________
+pip install hashlib json
 
 
+import hashlib
+import json
+import time
 
+class Blockchain:
+    def __init__(self):
+        self.chain = []
+        self.create_block(proof=1, previous_hash='0')  # Bloco Gênesis
+
+    def create_block(self, proof, previous_hash, data="Transação Inicial"):
+        block = {
+            'index': len(self.chain) + 1,
+            'timestamp': str(time.time()),
+            'data': data,
+            'proof': proof,
+            'previous_hash': previous_hash
+        }
+        block['hash'] = self.hash(block)
+        self.chain.append(block)
+        return block
+
+    def hash(self, block):
+        encoded_block = json.dumps(block, sort_keys=True).encode()
+        return hashlib.sha256(encoded_block).hexdigest()
+
+    def get_previous_block(self):
+        return self.chain[-1]
+
+    def proof_of_work(self, previous_proof):
+        new_proof = 1
+        check_proof = False
+        while check_proof is False:
+            hash_operation = hashlib.sha256(str(new_proof**2 - previous_proof**2).encode()).hexdigest()
+            if hash_operation[:4] == '0000':  # Critério de dificuldade
+                check_proof = True
+            else:
+                new_proof += 1
+        return new_proof
+
+    def validate_chain(self):
+        for i in range(1, len(self.chain)):
+            if self.chain[i]['previous_hash'] != self.hash(self.chain[i - 1]):
+                return False
+        return True
+
+# Criando Blockchain
+blockchain = Blockchain()
+
+# Adicionando novos blocos
+previous_block = blockchain.get_previous_block()
+proof = blockchain.proof_of_work(previous_block['proof'])
+new_block = blockchain.create_block(proof, previous_block['hash'], data="Nova Transação")
+
+# Exibindo Blockchain
+for block in blockchain.chain:
+    print(json.dumps(block, indent=4))
