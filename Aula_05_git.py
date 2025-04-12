@@ -33,7 +33,6 @@ if __name__ == '__main__':
 
 # Configurar um Git Hook para rodar os testes antes de cada commit
 echo "
-
 #!/bin/bash
 python3 -m unittest test_main.py
 " > .git/hooks/pre-commit
